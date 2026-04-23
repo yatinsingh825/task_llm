@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wedding AI Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rose: #c9636a;
+    --rose-light: #f5e6e7;
+    --rose-pale: #fdf6f6;
+    --gold: #b8974a;
+    --gold-light: #f5eed8;
+    --ink: #1a1218;
+    --muted: #7a6570;
+    --border: #e8d9db;
+    --white: #fffcfc;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--white);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    text-align: center;
+    padding: 60px 24px 40px;
+    background: linear-gradient(180deg, #fdf0f1 0%, var(--white) 100%);
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    top: -60px; left: 50%;
+    transform: translateX(-50%);
+    width: 500px; height: 200px;
+    background: radial-gradient(ellipse, rgba(201,99,106,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .header-tag {
+    display: inline-block;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--rose);
+    background: var(--rose-light);
+    padding: 5px 14px;
+    border-radius: 20px;
+    margin-bottom: 18px;
+  }
+  header h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.4rem, 5vw, 3.8rem);
+    font-weight: 300;
+    color: var(--ink);
+    line-height: 1.15;
+    margin-bottom: 12px;
+  }
+  header h1 em {
+    font-style: italic;
+    color: var(--rose);
+  }
+  header p {
+    font-size: 15px;
+    color: var(--muted);
+    font-weight: 300;
+  }
+
+  /* ── Search ── */
+  .search-section {
+    max-width: 720px;
+    margin: 48px auto 0;
+    padding: 0 24px;
+  }
+
+  .search-box {
+    position: relative;
+  }
+
+  .search-input-row {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  #searchInput {
+    flex: 1;
+    padding: 18px 22px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 300;
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    background: var(--white);
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.25s, box-shadow 0.25s;
+  }
+  #searchInput::placeholder { color: #bba8ad; }
+  #searchInput:focus {
+    border-color: var(--rose);
+    box-shadow: 0 0 0 4px rgba(201,99,106,0.08);
+  }
+
+  #searchBtn {
+    padding: 18px 28px;
+    background: var(--rose);
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, transform 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #searchBtn:hover { background: #b85460; transform: translateY(-1px); }
+  #searchBtn:active { transform: translateY(0); }
+  #searchBtn svg { width: 16px; height: 16px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; }
+
+  /* Spell suggestions */
+  .spell-suggestions {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 80px;
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 8px;
+    z-index: 100;
+    box-shadow: 0 8px 24px rgba(26,18,24,0.1);
+    display: none;
+  }
+  .spell-suggestions.visible { display: block; }
+  .spell-label {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 4px 10px 8px;
+  }
+  .suggestion-item {
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--rose);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.15s;
+  }
+  .suggestion-item:hover { background: var(--rose-light); }
+  .suggestion-item::before { content: '→'; color: var(--gold); font-size: 12px; }
+
+  /* Quick suggestions */
+  .quick-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .pill {
+    padding: 7px 16px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+    background: var(--white);
+    transition: all 0.2s;
+    font-weight: 300;
+  }
+  .pill:hover {
+    border-color: var(--rose);
+    color: var(--rose);
+    background: var(--rose-light);
+  }
+
+  /* ── Main content ── */
+  .content {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* AI Response card */
+  .response-card {
+    display: none;
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 32px 36px;
+    margin-bottom: 40px;
+    position: relative;
+    animation: fadeUp 0.4s ease both;
+  }
+  .response-card.visible { display: block; }
+  .response-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 32px; right: 32px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--rose), var(--gold));
+    border-radius: 2px;
+  }
+  .response-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .response-icon {
+    width: 32px; height: 32px;
+    background: var(--rose-light);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .response-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 400;
+    color: var(--ink);
+  }
+  .model-badge {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 20px;
+  }
+  .model-badge.trained {
+    background: #e8f5e8;
+    color: #2d7a2d;
+  }
+  .model-badge.api {
+    background: var(--gold-light);
+    color: #7a6020;
+  }
+  .response-text {
+    font-size: 15px;
+    line-height: 1.8;
+    color: #3a2a30;
+    font-weight: 300;
+  }
+  .spell-notice {
+    display: none;
+    margin-bottom: 16px;
+    padding: 10px 16px;
+    background: var(--gold-light);
+    border-radius: 10px;
+    font-size: 13px;
+    color: #7a6020;
+  }
+  .spell-notice.visible { display: block; }
+
+  /* Image grid */
+  .section-heading {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px;
+    font-weight: 300;
+    color: var(--ink);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-heading::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+  .img-card {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    aspect-ratio: 4/3;
+    background: var(--rose-pale);
+    animation: fadeUp 0.4s ease both;
+    cursor: pointer;
+  }
+  .img-card img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+    display: block;
+  }
+  .img-card:hover img { transform: scale(1.04); }
+  .img-card .img-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(26,18,24,0.5) 0%, transparent 50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    display: flex;
+    align-items: flex-end;
+    padding: 14px;
+  }
+  .img-card:hover .img-overlay { opacity: 1; }
+  .img-credit {
+    font-size: 11px;
+    color: rgba(255,255,255,0.85);
+    font-weight: 300;
+  }
+
+  /* Loading state */
+  .loading-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+  .skeleton {
+    border-radius: 16px;
+    aspect-ratio: 4/3;
+    background: linear-gradient(90deg, #f0e8e9 25%, #f8f0f1 50%, #f0e8e9 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+  }
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Keyword tags */
+  .keyword-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 28px;
+  }
+  .keyword-tag {
+    padding: 5px 14px;
+    background: var(--rose-light);
+    color: var(--rose);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+  }
+
+  /* History sidebar */
+  .history-bar {
+    display: none;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .history-bar.visible { display: flex; }
+  .history-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    width: 100%;
+    margin-bottom: 4px;
+  }
+  .history-item {
+    padding: 5px 14px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .history-item:hover { color: var(--rose); border-color: var(--rose); }
+
+  /* No images message */
+  .no-images {
+    text-align: center;
+    padding: 48px;
+    color: var(--muted);
+    font-size: 14px;
+    border: 1.5px dashed var(--border);
+    border-radius: 16px;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Stagger image cards */
+  .img-card:nth-child(1) { animation-delay: 0.05s; }
+  .img-card:nth-child(2) { animation-delay: 0.10s; }
+  .img-card:nth-child(3) { animation-delay: 0.15s; }
+  .img-card:nth-child(4) { animation-delay: 0.20s; }
+  .img-card:nth-child(5) { animation-delay: 0.25s; }
+  .img-card:nth-child(6) { animation-delay: 0.30s; }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 80px 24px;
+    animation: fadeUp 0.5s ease both;
+  }
+  .empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    display: block;
+  }
+  .empty-state h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 300;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+  .empty-state p {
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 300;
+  }
+
+  @media (max-width: 600px) {
+    .search-input-row { flex-direction: column; }
+    .spell-suggestions { right: 0; }
+    .response-card { padding: 24px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-tag">AI-Powered · Fine-Tuned Model</div>
+  <h1>Your Wedding,<br><em>Perfectly Planned</em></h1>
+  <p>Ask anything — powered by a custom-trained wedding AI model</p>
+</header>
+
+<div class="search-section">
+  <div class="search-box">
+    <div class="search-input-row">
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="e.g. mandap decoration ideas, mehndi ceremony planning..."
+        autocomplete="off"
+      >
+      <button id="searchBtn" onclick="doSearch()">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Search
+      </button>
+    </div>
+    <div class="spell-suggestions" id="spellBox">
+      <div class="spell-label">Did you mean?</div>
+    </div>
+  </div>
+
+  <div class="quick-pills">
+    <span class="pill" onclick="searchFor('mehndi ceremony planning')">💅 Mehndi ceremony</span>
+    <span class="pill" onclick="searchFor('wedding mandap decoration')">🌸 Mandap decor</span>
+    <span class="pill" onclick="searchFor('bridal lehenga selection')">👗 Bridal lehenga</span>
+    <span class="pill" onclick="searchFor('sangeet entertainment ideas')">🎶 Sangeet ideas</span>
+    <span class="pill" onclick="searchFor('wedding budget planning')">💰 Budget tips</span>
+    <span class="pill" onclick="searchFor('haldi ceremony')">🌼 Haldi ceremony</span>
+  </div>
+
+  <div class="history-bar" id="historyBar">
+    <div class="history-label">Recent searches</div>
+  </div>
+</div>
+
+<div class="content">
+  <!-- Empty state shown by default -->
+  <div class="empty-state" id="emptyState">
+    <span class="empty-icon">💍</span>
+    <h2>Plan your perfect wedding</h2>
+    <p>Ask about ceremonies, decor, venues, outfits, catering, and more.</p>
+  </div>
+
+  <!-- AI Response -->
+  <div class="response-card" id="responseCard">
+    <div class="response-meta">
+      <div class="response-icon">✨</div>
+      <div class="response-title">AI Wedding Advisor</div>
+      <span class="model-badge" id="modelBadge">—</span>
+    </div>
+    <div class="spell-notice" id="spellNotice"></div>
+    <div class="response-text" id="responseText"></div>
+  </div>
+
+  <!-- Image results -->
+  <div id="imageSection" style="display:none">
+    <div class="section-heading">Inspiration Gallery</div>
+    <div class="keyword-tags" id="keywordTags"></div>
+    <div id="imageGrid" class="image-grid"></div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:8000';
+let spellTimer = null;
+let searchHistory = [];
+
+// Live spell check
+document.getElementById('searchInput').addEventListener('input', e => {
+  clearTimeout(spellTimer);
+  const text = e.target.value;
+  if (text.length < 4) { hideSpell(); return; }
+  spellTimer = setTimeout(() => liveSpell(text), 450);
+});
+
+document.getElementById('searchInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doSearch();
+  if (e.key === 'Escape') hideSpell();
+});
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.search-box')) hideSpell();
+});
+
+async function liveSpell(text) {
+  try {
+    const res = await fetch(`${API}/spell-check`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    const data = await res.json();
+    if (data.has_errors) showSpell(data);
+    else hideSpell();
+  } catch {}
+}
+
+function showSpell(data) {
+  const box = document.getElementById('spellBox');
+  // Clear previous suggestions (keep label)
+  while (box.children.length > 1) box.removeChild(box.lastChild);
+
+  for (const [wrong, info] of Object.entries(data.suggestions)) {
+    const item = document.createElement('div');
+    item.className = 'suggestion-item';
+    item.textContent = `"${wrong}" → "${info.best}"`;
+    item.onclick = () => {
+      document.getElementById('searchInput').value = data.corrected;
+      hideSpell();
+    };
+    box.appendChild(item);
+  }
+  box.classList.add('visible');
+}
+
+function hideSpell() {
+  document.getElementById('spellBox').classList.remove('visible');
+}
+
+function searchFor(text) {
+  document.getElementById('searchInput').value = text;
+  doSearch();
+}
+
+async function doSearch() {
+  const query = document.getElementById('searchInput').value.trim();
+  if (!query) return;
+  hideSpell();
+
+  // Hide empty state
+  document.getElementById('emptyState').style.display = 'none';
+
+  // Show loading response
+  const card = document.getElementById('responseCard');
+  card.classList.add('visible');
+  document.getElementById('responseText').innerHTML =
+    '<span style="color:var(--muted);font-style:italic">Consulting your wedding AI...</span>';
+  document.getElementById('modelBadge').textContent = '...';
+  document.getElementById('modelBadge').className = 'model-badge';
+  document.getElementById('spellNotice').classList.remove('visible');
+
+  // Show image skeletons
+  const imgSection = document.getElementById('imageSection');
+  imgSection.style.display = 'block';
+  document.getElementById('keywordTags').innerHTML = '';
+  const grid = document.getElementById('imageGrid');
+  grid.className = 'loading-grid';
+  grid.innerHTML = Array(6).fill('<div class="skeleton"></div>').join('');
+
+  try {
+    const res = await fetch(`${API}/search`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query })
+    });
+    const data = await res.json();
+
+    // Response card
+    document.getElementById('responseText').textContent = data.ai_response;
+
+    const badge = document.getElementById('modelBadge');
+    if (data.model_used === 'your_trained_model') {
+      badge.textContent = '🧠 Your Trained Model';
+      badge.className = 'model-badge trained';
+    } else {
+      badge.textContent = '⚡ Gemini API';
+      badge.className = 'model-badge api';
+    }
+
+    // Spell correction notice
+    if (data.spell_check && data.spell_check.has_errors) {
+      const notice = document.getElementById('spellNotice');
+      notice.textContent = `✏️ Searched for: "${data.spell_check.corrected}"`;
+      notice.classList.add('visible');
+    }
+
+    // Keywords
+    const tagsEl = document.getElementById('keywordTags');
+    (data.search_keywords || []).forEach(kw => {
+      const tag = document.createElement('span');
+      tag.className = 'keyword-tag';
+      tag.textContent = kw;
+      tagsEl.appendChild(tag);
+    });
+
+    // Images
+    grid.className = 'image-grid';
+    grid.innerHTML = '';
+    if (data.images && data.images.length > 0) {
+      data.images.forEach(img => {
+        const card = document.createElement('div');
+        card.className = 'img-card';
+        card.innerHTML = `
+          <img src="${img.thumbnail || img.url}" alt="Wedding inspiration" loading="lazy">
+          <div class="img-overlay">
+            <span class="img-credit">📷 ${img.credit || ''}</span>
+          </div>
+        `;
+        card.onclick = () => window.open(img.url, '_blank');
+        grid.appendChild(card);
+      });
+    } else {
+      grid.innerHTML = '<div class="no-images">No images found — try adding an API key in your .env file</div>';
+    }
+
+    // Update history
+    searchHistory.unshift(query);
+    searchHistory = [...new Set(searchHistory)].slice(0, 8);
+    renderHistory();
+
+  } catch (err) {
+    document.getElementById('responseText').innerHTML =
+      `<span style="color:var(--rose)">⚠️ Could not connect to backend. Make sure it's running:<br>
+      <code style="background:#f5e8e9;padding:2px 8px;border-radius:4px;font-size:13px">
+        cd backend && uvicorn main:app --reload --port 8000
+      </code></span>`;
+    grid.innerHTML = '';
+    console.error(err);
+  }
+}
+
+function renderHistory() {
+  if (searchHistory.length === 0) return;
+  const bar = document.getElementById('historyBar');
+  bar.classList.add('visible');
+  // Remove old items (keep label)
+  while (bar.children.length > 1) bar.removeChild(bar.lastChild);
+  searchHistory.forEach(q => {
+    const item = document.createElement('span');
+    item.className = 'history-item';
+    item.textContent = q;
+    item.onclick = () => searchFor(q);
+    bar.appendChild(item);
+  });
+}
+</script>
+</body>
+</html>

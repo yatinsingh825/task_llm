@@ -1,0 +1,118 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #fff0f5, #fce4ec);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container { max-width: 1200px; margin: auto; }
+
+header {
+    text-align: center;
+    padding: 40px 0 30px;
+}
+
+header h1 { font-size: 2.5rem; color: #880e4f; }
+header p { color: #ad1457; margin-top: 8px; }
+
+.search-wrapper {
+    position: relative;
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+#searchInput {
+    flex: 1;
+    padding: 16px 20px;
+    font-size: 1rem;
+    border: 2px solid #f48fb1;
+    border-radius: 12px;
+    outline: none;
+    transition: border 0.3s;
+}
+
+#searchInput:focus { border-color: #e91e63; }
+
+#searchBtn {
+    padding: 16px 28px;
+    background: #e91e63;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+#searchBtn:hover { background: #880e4f; }
+
+.spell-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    border: 1px solid #f48fb1;
+    border-radius: 8px;
+    padding: 10px;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    width: calc(100% - 110px);
+}
+
+.spell-suggestions.hidden { display: none; }
+
+.suggestion-item {
+    padding: 6px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    color: #e91e63;
+}
+
+.suggestion-item:hover { background: #fce4ec; }
+
+.ai-response {
+    background: white;
+    border-left: 4px solid #e91e63;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    line-height: 1.7;
+    color: #333;
+}
+
+.ai-response.hidden { display: none; }
+
+.image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.image-grid img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.3s;
+}
+
+.image-grid img:hover { transform: scale(1.03); }
+
+.video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.video-grid video {
+    width: 100%;
+    border-radius: 12px;
+}
+
+.loading { text-align: center; padding: 40px; color: #e91e63; font-size: 1.2rem; }
