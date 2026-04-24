@@ -1,4 +1,5 @@
 import json
+import os
 import torch
 from datasets import Dataset
 from transformers import (
@@ -12,18 +13,25 @@ from peft import LoraConfig, get_peft_model, TaskType
 
 # ===== CONFIGURATION =====
 BASE_MODEL = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"  # Small enough for laptop
-DATA_FILE = "data/wedding_qa.jsonl"
-OUTPUT_DIR = "../../models/wedding_model"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_FILE = os.path.join(SCRIPT_DIR, "data/wedding_qa.jsonl")
+OUTPUT_DIR = os.path.join(SCRIPT_DIR, "../../models/wedding_model")
 # =========================
 
 print("Step 1: Loading your wedding data...")
 data = []
-with open(DATA_FILE, "r", encoding="utf-8") as f:
+with open(DATA_FILE, "r", encoding="utf-8-sig") as f:
     for line in f:
-        item = json.loads(line.strip())
-        # Format it as a conversation the model can learn from
-        text = f"<human>: {item['prompt']}\n<assistant>: {item['completion']}"
-        data.append({"text": text})
+        line = line.strip()
+        if not line:  # Skip empty lines
+            continue
+        try:
+            item = json.loads(line)
+            # Format it as a conversation the model can learn from
+            text = f"<human>: {item['prompt']}\n<assistant>: {item['completion']}"
+            data.append({"text": text})
+        except json.JSONDecodeError as e:
+            print(f"Warning: Skipped invalid JSON line: {e}")
 
 print(f"Loaded {len(data)} training examples")
 dataset = Dataset.from_list(data)
