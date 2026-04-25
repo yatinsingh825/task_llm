@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Wedding AI Planner</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   :root {
     --rose: #c9636a;
@@ -441,10 +442,165 @@
     font-weight: 300;
   }
 
+  /* Tab Navigation */
+  .tabs {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 32px;
+    border-bottom: 1.5px solid var(--border);
+    padding-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    padding: 10px 20px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .tab-btn.active {
+    color: var(--rose);
+    border-bottom-color: var(--rose);
+  }
+  .tab-btn:hover { color: var(--rose); }
+
+  /* Voice button */
+  .voice-btn {
+    padding: 18px 16px;
+    background: #e8f5e8;
+    color: #2d7a2d;
+    border: 1.5px solid #c8e6c9;
+    border-radius: 14px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .voice-btn:hover { background: #d4edda; transform: scale(1.05); }
+  .voice-btn.listening { animation: pulse 1s infinite; }
+  @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+  /* Budget section */
+  .budget-form {
+    background: var(--rose-light);
+    padding: 24px;
+    border-radius: 16px;
+    margin-bottom: 32px;
+  }
+  .budget-form input {
+    padding: 12px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    width: 100%;
+    margin-bottom: 12px;
+  }
+  .budget-btn {
+    padding: 12px 24px;
+    background: var(--rose);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+  .budget-btn:hover { background: #b85460; }
+
+  .budget-chart {
+    max-width: 400px;
+    margin: 24px auto;
+  }
+
+  /* Chat interface */
+  .chat-container {
+    background: var(--rose-pale);
+    border-radius: 16px;
+    padding: 20px;
+    height: 500px;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+  }
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 16px;
+    padding-right: 8px;
+  }
+  .message {
+    margin-bottom: 12px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    animation: fadeUp 0.3s ease;
+  }
+  .message.user {
+    background: var(--rose);
+    color: white;
+    margin-left: 32px;
+    text-align: right;
+  }
+  .message.assistant {
+    background: var(--white);
+    border: 1px solid var(--border);
+    margin-right: 32px;
+  }
+  .chat-input-row {
+    display: flex;
+    gap: 8px;
+  }
+  .chat-input-row input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .chat-input-row button {
+    padding: 12px 20px;
+    background: var(--rose);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+
+  /* Download button */
+  .download-btn {
+    display: inline-block;
+    padding: 12px 24px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+    margin-bottom: 20px;
+  }
+  .download-btn:hover { background: #45a049; transform: translateY(-2px); }
+
+  .tab-content {
+    display: none;
+  }
+  .tab-content.active { display: block; }
+
   @media (max-width: 600px) {
     .search-input-row { flex-direction: column; }
     .spell-suggestions { right: 0; }
     .response-card { padding: 24px 20px; }
+    .message.user { margin-left: 12px; }
+    .message.assistant { margin-right: 12px; }
+    .chat-container { height: 400px; }
   }
 </style>
 </head>
@@ -465,6 +621,7 @@
         placeholder="e.g. mandap decoration ideas, mehndi ceremony planning..."
         autocomplete="off"
       >
+      <button class="voice-btn" id="voiceBtn" title="Click to speak">🎤</button>
       <button id="searchBtn" onclick="doSearch()">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         Search
@@ -490,29 +647,74 @@
 </div>
 
 <div class="content">
-  <!-- Empty state shown by default -->
-  <div class="empty-state" id="emptyState">
-    <span class="empty-icon">💍</span>
-    <h2>Plan your perfect wedding</h2>
-    <p>Ask about ceremonies, decor, venues, outfits, catering, and more.</p>
+  <!-- Tab Navigation -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('search')">🔍 Search</button>
+    <button class="tab-btn" onclick="switchTab('budget')">💰 Budget</button>
+    <button class="tab-btn" onclick="switchTab('checklist')">📋 Checklist</button>
+    <button class="tab-btn" onclick="switchTab('chat')">💬 Chat</button>
   </div>
 
-  <!-- AI Response -->
-  <div class="response-card" id="responseCard">
-    <div class="response-meta">
-      <div class="response-icon">✨</div>
-      <div class="response-title">AI Wedding Advisor</div>
-      <span class="model-badge" id="modelBadge">—</span>
+  <!-- SEARCH TAB -->
+  <div id="search-tab" class="tab-content active">
+    <!-- Empty state shown by default -->
+    <div class="empty-state" id="emptyState">
+      <span class="empty-icon">💍</span>
+      <h2>Plan your perfect wedding</h2>
+      <p>Ask about ceremonies, decor, venues, outfits, catering, and more.</p>
     </div>
-    <div class="spell-notice" id="spellNotice"></div>
-    <div class="response-text" id="responseText"></div>
+
+    <!-- AI Response -->
+    <div class="response-card" id="responseCard">
+      <div class="response-meta">
+        <div class="response-icon">✨</div>
+        <div class="response-title">AI Wedding Advisor</div>
+        <span class="model-badge" id="modelBadge">—</span>
+      </div>
+      <div class="spell-notice" id="spellNotice"></div>
+      <div class="response-text" id="responseText"></div>
+    </div>
+
+    <!-- Image results -->
+    <div id="imageSection" style="display:none">
+      <div class="section-heading">Inspiration Gallery</div>
+      <div class="keyword-tags" id="keywordTags"></div>
+      <div id="imageGrid" class="image-grid"></div>
+    </div>
   </div>
 
-  <!-- Image results -->
-  <div id="imageSection" style="display:none">
-    <div class="section-heading">Inspiration Gallery</div>
-    <div class="keyword-tags" id="keywordTags"></div>
-    <div id="imageGrid" class="image-grid"></div>
+  <!-- BUDGET TAB -->
+  <div id="budget-tab" class="tab-content">
+    <h2 style="font-family:'Cormorant Garamond';font-size:28px;margin-bottom:24px;">Wedding Budget Calculator</h2>
+    <div class="budget-form">
+      <input type="number" id="budgetInput" placeholder="Enter total budget (e.g., 500000)" min="0">
+      <button class="budget-btn" onclick="calculateBudget()">Calculate Breakdown</button>
+    </div>
+    <div id="budgetResult" style="display:none">
+      <div class="budget-chart">
+        <canvas id="budgetChart"></canvas>
+      </div>
+      <div id="budgetTable" style="margin-top:24px;"></div>
+    </div>
+  </div>
+
+  <!-- CHECKLIST TAB -->
+  <div id="checklist-tab" class="tab-content">
+    <h2 style="font-family:'Cormorant Garamond';font-size:28px;margin-bottom:24px;">Wedding Checklist</h2>
+    <button class="download-btn" onclick="downloadChecklist()">📥 Download 12-Month Checklist PDF</button>
+    <div id="checklistPreview" style="background:var(--rose-pale);padding:20px;border-radius:16px;margin-top:20px;"></div>
+  </div>
+
+  <!-- CHAT TAB -->
+  <div id="chat-tab" class="tab-content">
+    <h2 style="font-family:'Cormorant Garamond';font-size:28px;margin-bottom:24px;">Wedding Planning Chat</h2>
+    <div class="chat-container">
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="chat-input-row">
+        <input type="text" id="chatInput" placeholder="Ask anything about weddings..." onkeydown="if(event.key==='Enter') sendChat()">
+        <button onclick="sendChat()">Send</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -688,6 +890,171 @@ function renderHistory() {
     item.onclick = () => searchFor(q);
     bar.appendChild(item);
   });
+}
+
+// ============ TAB SWITCHING ============
+function switchTab(tabName) {
+  // Hide all tabs
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+  // Show selected tab
+  document.getElementById(tabName + '-tab').classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ============ VOICE SEARCH ============
+const voiceBtn = document.getElementById('voiceBtn');
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+if (SpeechRecognition) {
+  const recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.lang = 'en-US';
+
+  voiceBtn.onclick = () => {
+    voiceBtn.classList.add('listening');
+    recognition.start();
+  };
+
+  recognition.onresult = (event) => {
+    let transcript = '';
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      transcript += event.results[i][0].transcript;
+    }
+    document.getElementById('searchInput').value = transcript;
+    voiceBtn.classList.remove('listening');
+  };
+
+  recognition.onerror = () => {
+    voiceBtn.classList.remove('listening');
+  };
+} else {
+  voiceBtn.style.opacity = '0.5';
+  voiceBtn.onclick = () => alert('Voice search not supported in your browser');
+}
+
+// ============ BUDGET CALCULATOR ============
+let budgetChart = null;
+
+function calculateBudget() {
+  const total = parseFloat(document.getElementById('budgetInput').value);
+  if (!total || total <= 0) {
+    alert('Please enter a valid budget');
+    return;
+  }
+
+  const breakdown = {
+    'Venue (30%)': total * 0.30,
+    'Catering (35%)': total * 0.35,
+    'Decor (20%)': total * 0.20,
+    'Photography (10%)': total * 0.10,
+    'Music/Entertainment (5%)': total * 0.05
+  };
+
+  // Save to backend
+  fetch(`${API}/budget`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ total_budget: total, user_id: 'default_user' })
+  }).catch(e => console.error('Budget save error:', e));
+
+  // Show result
+  document.getElementById('budgetResult').style.display = 'block';
+
+  // Chart
+  const ctx = document.getElementById('budgetChart').getContext('2d');
+  if (budgetChart) budgetChart.destroy();
+  budgetChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(breakdown),
+      datasets: [{
+        data: Object.values(breakdown),
+        backgroundColor: ['#c9636a', '#b8974a', '#f5e6e7', '#f5eed8', '#e8d9db'],
+        borderColor: '#fff',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom' }
+      }
+    }
+  });
+
+  // Table
+  let table = '<table style="width:100%;border-collapse:collapse;margin-top:20px;">';
+  for (const [item, amount] of Object.entries(breakdown)) {
+    const percentage = ((amount / total) * 100).toFixed(0);
+    table += `<tr style="border-bottom:1px solid var(--border);padding:12px;">
+      <td style="padding:10px;color:var(--ink);">${item}</td>
+      <td style="padding:10px;text-align:right;color:var(--rose);font-weight:600;">₹${Math.round(amount).toLocaleString()}</td>
+    </tr>`;
+  }
+  table += '</table>';
+  document.getElementById('budgetTable').innerHTML = table;
+}
+
+// ============ CHECKLIST PDF DOWNLOAD ============
+function downloadChecklist() {
+  fetch(`${API}/checklist-pdf`, { method: 'POST' })
+    .then(res => res.json())
+    .then(data => {
+      const link = document.createElement('a');
+      link.href = 'data:application/pdf;base64,' + data.pdf;
+      link.download = data.filename;
+      link.click();
+    })
+    .catch(e => alert('Error downloading PDF: ' + e.message));
+}
+
+// ============ CHATBOT MODE ============
+let chatHistory = [];
+const userId = 'user_' + Date.now();
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const query = input.value.trim();
+  if (!query) return;
+
+  input.value = '';
+
+  // Add user message to chat
+  addChatMessage(query, 'user');
+
+  try {
+    const res = await fetch(`${API}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: userId,
+        query: query,
+        history: chatHistory
+      })
+    });
+    const data = await res.json();
+
+    // Add assistant message
+    addChatMessage(data.response, 'assistant');
+
+    // Update history
+    chatHistory.push({ query, response: data.response });
+  } catch (err) {
+    addChatMessage('Error connecting to backend', 'assistant');
+    console.error(err);
+  }
+}
+
+function addChatMessage(text, sender) {
+  const messagesEl = document.getElementById('chatMessages');
+  const msg = document.createElement('div');
+  msg.className = 'message ' + sender;
+  msg.textContent = text;
+  messagesEl.appendChild(msg);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 </script>
 </body>

@@ -7,6 +7,8 @@ db = client["wedding_ai"]
 searches_col = db["searches"]
 images_col = db["image_cache"]
 cache_col = db["response_cache"]
+budgets_col = db["budgets"]
+conversations_col = db["conversations"]
 
 # Index for TTL-based cache expiration (24 hours)
 cache_col.create_index("timestamp", expireAfterSeconds=86400)
@@ -77,3 +79,43 @@ def clear_old_cache(days: int = 7):
     cutoff_date = datetime.now() - timedelta(days=days)
     cache_col.delete_many({"timestamp": {"$lt": cutoff_date}})
     images_col.delete_many({"updated": {"$lt": cutoff_date}})
+
+def save_budget(user_id: str, total_budget: float, breakdown: dict):
+    """Save wedding budget breakdown per user"""
+    budget_data = {
+        "user_id": user_id,
+        "total_budget": total_budget,
+        "breakdown": breakdown,
+        "timestamp": datetime.now()
+    }
+    budgets_col.update_one(
+        {"user_id": user_id},
+        {"$set": budget_data},
+        upsert=True
+    )
+
+def get_budget(user_id: str):
+    """Get user's budget"""
+    result = budgets_col.find_one({"user_id": user_id})
+    if result:
+        result.pop("_id", None)
+        return result
+    return None
+
+def save_conversation(user_id: str, query: str, response: str):
+    """Save conversation message for history"""
+    msg = {
+        "user_id": user_id,
+        "query": query,
+        "response": response,
+        "timestamp": datetime.now()
+    }
+    conversations_col.insert_one(msg)
+
+def get_conversation(user_id: str, limit: int = 10):
+    """Get conversation history for user"""
+    results = conversations_col.find(
+        {"user_id": user_id},
+        {"_id": 0}
+    ).sort("timestamp", -1).limit(limit)
+    return list(results)[::-1]  # Reverse to show oldest first
