@@ -1,5 +1,5 @@
 import os
-import torch
+
 import google.generativeai as genai
 from dotenv import load_dotenv
 
@@ -12,74 +12,6 @@ TRAINED_MODEL_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspat
 _tokenizer = None
 _model = None
 
-def load_my_model():
-    global _tokenizer, _model
-    try:
-        from transformers import AutoTokenizer, AutoModelForCausalLM
-        from peft import PeftModel
-        print(f"Loading YOUR trained wedding model from: {TRAINED_MODEL_PATH}")
-        if not os.path.exists(TRAINED_MODEL_PATH):
-            print(f"ERROR: Model path does not exist: {TRAINED_MODEL_PATH}")
-            return
-
-        # Use lower precision for faster CPU inference
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        print(f"Using device: {device}")
-
-        _tokenizer = AutoTokenizer.from_pretrained(TRAINED_MODEL_PATH)
-        # Load in float16 for CPU efficiency
-        base = AutoModelForCausalLM.from_pretrained(
-            BASE_MODEL,
-            dtype=torch.float16 if device == "cpu" else torch.float32,
-            device_map="auto"  # Auto-detect best placement
-        )
-        _model = PeftModel.from_pretrained(base, TRAINED_MODEL_PATH)
-        _model.eval()
-        print("✅ Your trained model is ready!")
-    except Exception as e:
-        print(f"❌ Could not load trained model: {e}")
-        import traceback
-        traceback.print_exc()
-        print("Will use Gemini API as fallback.")
-
-def ask_my_model(user_input: str) -> str:
-    if _model is None or _tokenizer is None:
-        return ""
-    try:
-        import time
-        start = time.time()
-        prompt = f"<human>: {user_input}\n<assistant>:"
-
-        inputs = _tokenizer(prompt, return_tensors="pt", truncation=True, padding=True, max_length=512)
-
-        with torch.no_grad():
-            outputs = _model.generate(
-                input_ids=inputs["input_ids"],
-                attention_mask=inputs["attention_mask"],
-                max_new_tokens=80,  # REDUCED: from 150 for faster generation
-                min_length=10,
-                do_sample=False,  # Greedy decoding
-                pad_token_id=_tokenizer.eos_token_id,
-                eos_token_id=_tokenizer.eos_token_id,
-                use_cache=True,  # Enable caching for faster generation
-                num_beams=1,  # Greedy search (fastest)
-            )
-
-        response = _tokenizer.decode(outputs[0], skip_special_tokens=True)
-        text = response.split("<assistant>:")[-1].strip()
-
-        # Ensure response ends with proper punctuation
-        if text and text[-1] not in '.!?\n':
-            text = text + '.'
-
-        elapsed = time.time() - start
-        print(f"⏱️ Model inference took {elapsed:.2f}s ({len(text)} chars)")
-        return text
-    except Exception as e:
-        print(f"Trained model error: {e}")
-        import traceback
-        traceback.print_exc()
-        return ""
 
 def ask_gemini(user_input: str) -> str:
     try:
