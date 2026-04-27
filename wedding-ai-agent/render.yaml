@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: wedding-ai-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port 10000
+    envVars:
+      - key: GEMINI_API_KEY
+        value: AIzaSyBt6IWlkEvpw-Kp0aJUXhHcePqEfDq46Xo
+      - key: PEXELS_API_KEY
+        value: ZQ4SB1RgBcB84kDUQn81A4D1RasU77wtg1swxibcF76rJTQuPljnktxt
+      - key: PIXABAY_API_KEY
+        value: your_pixabay_key_here
+      - key: MONGO_URI
+        value: mongodb://localhost:27017

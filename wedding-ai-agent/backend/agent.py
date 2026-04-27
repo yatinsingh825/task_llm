@@ -143,8 +143,14 @@ def get_image_keywords(user_input: str) -> list:
     return ["wedding decoration", "wedding ceremony"]
 
 def smart_agent(user_input: str) -> dict:
-    # Try YOUR trained model first
-    my_answer = ask_my_model(user_input)
+    response = ask_gemini(user_input)
+    keywords = get_image_keywords(user_input)
+
+    return {
+        "response": response,
+        "model_used": "gemini_api",
+        "search_keywords": keywords
+    }
 
     if my_answer:  # If we got any response from trained model
         source = "your_trained_model"
@@ -163,6 +169,3 @@ def smart_agent(user_input: str) -> dict:
         "model_used": source,
         "search_keywords": keywords
     }
-
-# Load your trained model when this module is imported
-load_my_model()

@@ -1,4 +1,4 @@
-const API = "http://localhost:8000";
+const API = "https://YOUR-BACKEND-URL.onrender.com";
 let spellTimeout = null;
 
 // Live spell check as user types
