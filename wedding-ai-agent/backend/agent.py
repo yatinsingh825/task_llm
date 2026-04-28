@@ -8,21 +8,44 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY", ""))
 
 def ask_gemini(user_input: str) -> str:
     try:
-        system = "You are a wedding planning assistant. Give SHORT answers (2-3 sentences)."
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        query_type = classify_query(user_input)
+
+        base_prompt = """
+You are an expert Indian wedding planning assistant.
+
+Give clear, practical advice. Keep answers short (3–5 lines).
+"""
+
+        # Add specialization
+        if query_type == "budget":
+            extra = "Focus on cost-saving tips and budget breakdown."
+        elif query_type == "event":
+            extra = "Give event-specific ideas and suggestions."
+        elif query_type == "fashion":
+            extra = "Suggest outfits, styles, and trends."
+        elif query_type == "decor":
+            extra = "Focus on decoration and venue ideas."
+        else:
+            extra = "Give general wedding advice."
+
+        final_prompt = f"{base_prompt}\n{extra}\n\nUser Query: {user_input}"
+
+        model = genai.GenerativeModel("gemini-1.5-flash")
 
         response = model.generate_content(
-            f"{system}\n\nQuestion: {user_input}",
+            final_prompt,
             generation_config={
-                "max_output_tokens": 150,
-                "temperature": 0.7,
-            }
+                "max_output_tokens": 200,
+                "temperature": 0.6,
+            },
+            request_options={"timeout": 20}
         )
 
-        return response.text[:300] if response.text else "No response."
-    except Exception:
-        return "Unable to generate response."
+        return response.text.strip() if response.text else "No response."
 
+    except Exception as e:
+        print("Gemini Error:", str(e))
+        return "Sorry, I'm having trouble right now. Please try again."
 
 def get_image_keywords(user_input: str) -> list:
     keywords_map = {
@@ -41,6 +64,20 @@ def get_image_keywords(user_input: str) -> list:
 
     return ["wedding decoration", "wedding ceremony"]
 
+
+def classify_query(user_input: str) -> str:
+    user_input = user_input.lower()
+
+    if any(word in user_input for word in ["budget", "cost", "price"]):
+        return "budget"
+    elif any(word in user_input for word in ["mehendi", "haldi", "sangeet", "wedding"]):
+        return "event"
+    elif any(word in user_input for word in ["dress", "lehenga", "jewelry"]):
+        return "fashion"
+    elif any(word in user_input for word in ["venue", "decoration", "mandap"]):
+        return "decor"
+    else:
+        return "general"
 
 def smart_agent(user_input: str) -> dict:
     response = ask_gemini(user_input)
