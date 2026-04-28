@@ -10,61 +10,86 @@ def ask_gemini(user_input: str) -> str:
     try:
         query_type = classify_query(user_input)
 
-        base_prompt = """
-You are an expert Indian wedding planning assistant.
+        prompt = f"""
+You are a professional Indian wedding planner.
 
-Give clear, practical advice. Keep answers short (3–5 lines).
+User Query: {user_input}
+
+Give:
+- Clear, practical suggestions
+- 3-5 bullet points
+- No generic AI phrases
 """
-
-        # Add specialization
-        if query_type == "budget":
-            extra = "Focus on cost-saving tips and budget breakdown."
-        elif query_type == "event":
-            extra = "Give event-specific ideas and suggestions."
-        elif query_type == "fashion":
-            extra = "Suggest outfits, styles, and trends."
-        elif query_type == "decor":
-            extra = "Focus on decoration and venue ideas."
-        else:
-            extra = "Give general wedding advice."
-
-        final_prompt = f"{base_prompt}\n{extra}\n\nUser Query: {user_input}"
 
         model = genai.GenerativeModel("gemini-1.5-flash")
 
         response = model.generate_content(
-            final_prompt,
+            prompt,
             generation_config={
                 "max_output_tokens": 200,
-                "temperature": 0.6,
-            },
-            request_options={"timeout": 20}
+                "temperature": 0.5,
+            }
         )
 
-        return response.text.strip() if response.text else "No response."
+        if not response.text:
+            return "Here are some wedding ideas based on your query."
+
+        return response.text.strip()
 
     except Exception as e:
         print("Gemini Error:", str(e))
-        return "Sorry, I'm having trouble right now. Please try again."
+
+        # ✅ SMART FALLBACK (IMPORTANT)
+        return fallback_response(user_input)
+    
+
+def fallback_response(user_input: str) -> str:
+    user = user_input.lower()
+
+    if "sherwani" in user:
+        return "Choose a sherwani in silk or velvet with embroidery. Pair it with a contrasting stole and mojris for a royal look."
+
+    elif "haldi" in user:
+        return "For a haldi ceremony, use yellow decor, marigold flowers, and simple seating. Keep it fun with music and playful rituals."
+
+    elif "mehendi" in user:
+        return "For mehendi, go for colorful decor, floral seating, and add music or dance for a lively vibe."
+
+    elif "budget" in user:
+        return "Plan your wedding budget by prioritizing venue, catering, and outfits. Keep 10–15% buffer for unexpected costs."
+
+    else:
+        return "Consider themes, budget planning, and guest comfort while organizing your wedding."
+
 
 def get_image_keywords(user_input: str) -> list:
-    keywords_map = {
-        "mehendi": ["mehendi ceremony", "haldi ceremony"],
-        "haldi": ["haldi ceremony", "mehendi"],
-        "sangeet": ["sangeet ceremony", "wedding dance"],
-        "venue": ["wedding venue", "banquet hall"],
-        "dress": ["wedding dress", "bridal gown"],
-    }
+    user = user_input.lower()
 
-    user_lower = user_input.lower()
+    if "sherwani" in user:
+        return ["groom sherwani", "indian groom outfit"]
 
-    for key, keywords in keywords_map.items():
-        if key in user_lower:
-            return keywords[:2]
+    elif "lehenga" in user:
+        return ["bridal lehenga", "indian bridal outfit"]
 
-    return ["wedding decoration", "wedding ceremony"]
+    elif "haldi" in user:
+        return ["haldi ceremony decoration", "haldi event"]
 
+    elif "mehendi" in user:
+        return ["mehendi ceremony decor", "mehendi function"]
 
+    elif "sangeet" in user:
+        return ["sangeet dance stage", "wedding dance event"]
+
+    elif "decoration" in user or "mandap" in user:
+        return ["wedding mandap decor", "wedding stage decoration"]
+
+    elif "venue" in user:
+        return ["wedding venue india", "wedding banquet hall"]
+
+    else:
+        return ["indian wedding", "wedding ceremony"]
+    
+    
 def classify_query(user_input: str) -> str:
     user_input = user_input.lower()
 
